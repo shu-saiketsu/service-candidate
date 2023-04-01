@@ -3,6 +3,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Saiketsu.Service.Candidate.Application;
 using Saiketsu.Service.Candidate.Application.Common;
+using Saiketsu.Service.Candidate.Domain.IntegrationEvents;
+using Saiketsu.Service.Candidate.Domain.Options;
+using Saiketsu.Service.Candidate.Infrastructure;
 using Saiketsu.Service.Candidate.Infrastructure.Persistence;
 using Serilog;
 using Serilog.Events;
@@ -12,6 +15,15 @@ Log.Logger = new LoggerConfiguration()
     .Enrich.FromLogContext()
     .WriteTo.Console()
     .CreateBootstrapLogger();
+
+static void SubscribeEventBus(IHost app)
+{
+    using var scope = app.Services.CreateScope();
+    var eventBus = scope.ServiceProvider.GetRequiredService<IEventBus>();
+
+    eventBus.Subscribe<PartyCreatedIntegrationEvent>();
+    eventBus.Subscribe<PartyDeletedIntegrationEvent>();
+}
 
 static void AddMiddleware(WebApplication app)
 {
@@ -57,7 +69,10 @@ static void AddServices(WebApplicationBuilder builder)
             .UseSnakeCaseNamingConvention();
     });
 
+    builder.Services.Configure<RabbitMQOptions>(builder.Configuration.GetSection(RabbitMQOptions.Position));
+
     builder.Services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
+    builder.Services.AddSingleton<IEventBus, RabbitEventBus>();
 }
 
 static void InjectSerilog(WebApplicationBuilder builder)
@@ -81,6 +96,7 @@ try
     var app = builder.Build();
 
     AddMiddleware(app);
+    SubscribeEventBus(app);
 
     app.Run();
 }
