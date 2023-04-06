@@ -1,6 +1,7 @@
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using Newtonsoft.Json;
 using Saiketsu.Service.Candidate.Application;
 using Saiketsu.Service.Candidate.Application.Common;
 using Saiketsu.Service.Candidate.Domain.IntegrationEvents;
@@ -41,7 +42,9 @@ static void AddMiddleware(WebApplication app)
 static void AddServices(WebApplicationBuilder builder)
 {
     builder.Services.AddRouting(options => options.LowercaseUrls = true);
-    builder.Services.AddControllers();
+    builder.Services.AddControllers().AddNewtonsoftJson(options =>
+        options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore);
+
     builder.Services.AddEndpointsApiExplorer();
 
     builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(IApplicationMarker).Assembly));

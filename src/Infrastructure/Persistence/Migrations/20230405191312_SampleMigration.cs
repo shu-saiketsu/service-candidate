@@ -37,10 +37,11 @@ namespace Saiketsu.Service.Candidate.Infrastructure.Persistence.Migrations
                 {
                     table.PrimaryKey("pk_candidate", x => x.id);
                     table.ForeignKey(
-                        name: "fk_candidate_party_entity_party_id",
+                        name: "fk_candidate_parties_party_id",
                         column: x => x.party_id,
                         principalTable: "party",
-                        principalColumn: "id");
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.SetNull);
                 });
 
             migrationBuilder.CreateIndex(

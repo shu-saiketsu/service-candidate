@@ -22,6 +22,7 @@ public sealed class GetCandidateQueryHandler : IRequestHandler<GetCandidateQuery
         await _validator.ValidateAndThrowAsync(request, cancellationToken);
 
         var candidate = await _context.Candidates
+            .AsNoTracking()
             .Include(x => x.Party)
             .SingleOrDefaultAsync(x => x.Id == request.Id, cancellationToken);
 

@@ -12,5 +12,8 @@ public sealed class PartyEntityConfiguration : IEntityTypeConfiguration<PartyEnt
 
         builder.Property(x => x.Id)
             .IsRequired();
+
+        builder.HasMany(x => x.Candidates)
+            .WithOne(x => x.Party);
     }
 }

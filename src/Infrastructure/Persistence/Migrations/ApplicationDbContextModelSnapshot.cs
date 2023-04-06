@@ -73,11 +73,17 @@ namespace Saiketsu.Service.Candidate.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Saiketsu.Service.Candidate.Domain.Entities.CandidateEntity", b =>
                 {
                     b.HasOne("Saiketsu.Service.Candidate.Domain.Entities.PartyEntity", "Party")
-                        .WithMany()
+                        .WithMany("Candidates")
                         .HasForeignKey("PartyId")
-                        .HasConstraintName("fk_candidate_party_entity_party_id");
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_candidate_parties_party_id");
 
                     b.Navigation("Party");
+                });
+
+            modelBuilder.Entity("Saiketsu.Service.Candidate.Domain.Entities.PartyEntity", b =>
+                {
+                    b.Navigation("Candidates");
                 });
 #pragma warning restore 612, 618
         }

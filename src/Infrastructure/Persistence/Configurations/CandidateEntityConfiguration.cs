@@ -13,5 +13,9 @@ internal class CandidateEntityConfiguration : IEntityTypeConfiguration<Candidate
         builder.Property(x => x.Name)
             .IsRequired()
             .HasMaxLength(50);
+
+        builder.HasOne(x => x.Party)
+            .WithMany(x => x.Candidates)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }

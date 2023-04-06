@@ -2,18 +2,22 @@
 using MediatR;
 using Saiketsu.Service.Candidate.Application.Common;
 using Saiketsu.Service.Candidate.Domain.Entities;
+using Saiketsu.Service.Candidate.Domain.IntegrationEvents;
 
 namespace Saiketsu.Service.Candidate.Application.Candidates.Commands.CreateCandidate;
 
 public sealed class CreateCandidateCommandHandler : IRequestHandler<CreateCandidateCommand, CandidateEntity>
 {
     private readonly IApplicationDbContext _context;
+    private readonly IEventBus _eventBus;
     private readonly IValidator<CreateCandidateCommand> _validator;
 
-    public CreateCandidateCommandHandler(IValidator<CreateCandidateCommand> validator, IApplicationDbContext context)
+    public CreateCandidateCommandHandler(IValidator<CreateCandidateCommand> validator, IApplicationDbContext context,
+        IEventBus eventBus)
     {
         _validator = validator;
         _context = context;
+        _eventBus = eventBus;
     }
 
     public async Task<CandidateEntity> Handle(CreateCandidateCommand request, CancellationToken cancellationToken)
@@ -34,6 +38,14 @@ public sealed class CreateCandidateCommandHandler : IRequestHandler<CreateCandid
         await _context.Entry(candidate)
             .Reference("Party")
             .LoadAsync(cancellationToken);
+
+        var @event = new CandidateCreatedIntegrationEvent
+        {
+            Id = candidate.Id,
+            Name = candidate.Name
+        };
+
+        _eventBus.Publish(@event);
 
         return candidate;
     }
