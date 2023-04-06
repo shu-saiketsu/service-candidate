@@ -11,9 +11,12 @@ using Saiketsu.Service.Candidate.Infrastructure.Persistence;
 using Serilog;
 using Serilog.Events;
 
+const string serviceName = "Candidate";
+
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
     .Enrich.FromLogContext()
+    .Enrich.WithProperty("ServiceName", serviceName)
     .WriteTo.Console()
     .CreateBootstrapLogger();
 
@@ -84,6 +87,7 @@ static void InjectSerilog(WebApplicationBuilder builder)
         .ReadFrom.Configuration(context.Configuration)
         .ReadFrom.Services(services)
         .Enrich.FromLogContext()
+        .Enrich.WithProperty("ServiceName", serviceName)
         .WriteTo.Console());
 }
 
