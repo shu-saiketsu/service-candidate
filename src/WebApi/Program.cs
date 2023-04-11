@@ -20,6 +20,14 @@ Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
     .CreateBootstrapLogger();
 
+static void PerformDataMigrations(WebApplication app)
+{
+    using var scope = app.Services.CreateScope();
+    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+    if (app.Environment.IsDevelopment()) context.Database.Migrate();
+}
+
 static void SubscribeEventBus(IHost app)
 {
     using var scope = app.Services.CreateScope();
@@ -40,6 +48,7 @@ static void AddMiddleware(WebApplication app)
     }
 
     app.MapControllers();
+    app.MapHealthChecks("/health");
 }
 
 static void AddServices(WebApplicationBuilder builder)
@@ -47,8 +56,9 @@ static void AddServices(WebApplicationBuilder builder)
     builder.Services.AddRouting(options => options.LowercaseUrls = true);
     builder.Services.AddControllers().AddNewtonsoftJson(options =>
         options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore);
-
     builder.Services.AddEndpointsApiExplorer();
+
+    builder.Services.AddHealthChecks();
 
     builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(IApplicationMarker).Assembly));
     builder.Services.AddValidatorsFromAssemblyContaining<IApplicationMarker>();
@@ -71,7 +81,11 @@ static void AddServices(WebApplicationBuilder builder)
     builder.Services.AddDbContext<ApplicationDbContext>(options =>
     {
         options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"),
-                builder => { builder.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName); })
+                builder =>
+                {
+                    builder.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName);
+                    builder.EnableRetryOnFailure();
+                })
             .UseSnakeCaseNamingConvention();
     });
 
@@ -104,6 +118,7 @@ try
 
     AddMiddleware(app);
     SubscribeEventBus(app);
+    PerformDataMigrations(app);
 
     app.Run();
 }

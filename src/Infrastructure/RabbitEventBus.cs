@@ -75,10 +75,26 @@ public sealed class RabbitEventBus : IEventBus
             Port = _rabbitOptions.Port,
             UserName = _rabbitOptions.UserName,
             Password = _rabbitOptions.Password,
-            DispatchConsumersAsync = true
+            DispatchConsumersAsync = true,
+            AutomaticRecoveryEnabled = true,
+            NetworkRecoveryInterval = TimeSpan.FromSeconds(10),
+            ClientProvidedName = "CandidateService"
         };
 
-        var connection = factory.CreateConnection();
+        IConnection? connection = null;
+        do
+        {
+            try
+            {
+                connection = factory.CreateConnection();
+                _logger.LogInformation("[RabbitMQ] A successful connection was made.");
+            }
+            catch (Exception)
+            {
+                _logger.LogWarning("[RabbitMQ] No connection could be found.");
+                Thread.Sleep(1000);
+            }
+        } while (connection == null);
 
         return connection;
     }
